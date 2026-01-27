@@ -410,9 +410,11 @@
         initTheme();
         lucide.createIcons();
 
+        netlifyIdentity.setAPIurl("https://finfamily-app.netlify.app/.netlify/identity");
+
         netlifyIdentity.on('init', user => {
             if (user) {
-                document.getElementById('logged-out').classList.add('hidden');
+                document.getElementById('logged-out').style.display = 'none';
                 document.getElementById('dashboard').classList.remove('hidden');
                 refreshData();
             }
