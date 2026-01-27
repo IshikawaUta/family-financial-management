@@ -1,0 +1,39 @@
+# Pengaturan Dasar Situs
+title: FinFamily - Manajemen Keuangan Keluarga Modern
+email: admin@family.com
+description: >-
+  Solusi cerdas manajemen keuangan keluarga. Pantau pengeluaran, 
+  pemasukan, dan tabungan dengan dasbor modern, aman, dan privat.
+baseurl: ""
+url: "https://nama-situs-anda.netlify.app"
+
+# twitter_username: keluarga_anda
+github_username: IshikawaUta
+social_share_image: ""
+
+# Permalinks
+permalink: /:title/
+
+# Koleksi & Folder
+include:
+  - functions
+  - .netlify
+
+# Pengaturan Build
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Exclude (File yang tidak perlu di-build menjadi website)
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - package.json
+  - package-lock.json
