@@ -69,9 +69,29 @@
         </div>
 
         <div id="dashboard" style="display: none;" class="space-y-8 animate-fade-up">
+            
+            <div class="glass p-6 rounded-[2rem] mb-8 border-b-4 border-emerald-500">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-black text-xl flex items-center gap-2">
+                        <i data-lucide="calendar-check" class="text-emerald-500"></i>
+                        Ringkasan Tahun <span id="current-year-label"></span>
+                    </h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-emerald-500/5 p-4 rounded-2xl">
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Pemasukan Tahunan</p>
+                        <p id="annual-income" class="text-2xl font-black text-emerald-500">Rp 0</p>
+                    </div>
+                    <div class="bg-rose-500/5 p-4 rounded-2xl">
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Pengeluaran Tahunan</p>
+                        <p id="annual-expense" class="text-2xl font-black text-rose-500">Rp 0</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass p-8 rounded-[2rem] shadow-sm border-l-4 border-indigo-500">
-                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Total Saldo</p>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Total Saldo (Bulan Ini)</p>
                     <h2 id="total-balance" class="text-4xl font-black mt-2 text-slate-800 dark:text-white tracking-tight">Rp 0</h2>
                 </div>
                 
@@ -94,7 +114,7 @@
                         + Transaksi Baru
                     </button>
                     <button id="btn-export" onclick="exportToExcel()" class="w-full py-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:opacity-80 transition-all">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel Bulan Ini
                     </button>
                 </div>
             </div>
@@ -102,22 +122,36 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="glass p-8 rounded-[2rem]">
                     <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
-                        <i data-lucide="trending-up" class="text-indigo-500"></i> Tren Transaksi
+                        <i data-lucide="trending-up" class="text-indigo-500"></i> Tren Transaksi (Bulan Ini)
                     </h4>
                     <canvas id="mainChart" height="200"></canvas>
                 </div>
                 <div class="glass p-8 rounded-[2rem]">
                     <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
-                        <i data-lucide="pie-chart" class="text-indigo-500"></i> Alokasi Kategori
+                        <i data-lucide="pie-chart" class="text-indigo-500"></i> Alokasi Kategori (Bulan Ini)
                     </h4>
                     <canvas id="categoryChart" height="200"></canvas>
                 </div>
             </div>
 
+            <div class="glass p-8 rounded-[2rem]">
+                <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                    <i data-lucide="bar-chart-3" class="text-indigo-500"></i> Perbandingan Pengeluaran Bulanan
+                </h4>
+                <div class="h-[300px]">
+                    <canvas id="annualBarChart"></canvas>
+                </div>
+            </div>
+
             <div class="glass rounded-[2rem] overflow-hidden">
-                <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                    <h4 class="font-bold">Riwayat Transaksi</h4>
-                    <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4">
+                    <h4 class="font-bold whitespace-nowrap">Riwayat Transaksi</h4>
+                    <div class="flex items-center gap-2">
+                        <input type="month" id="filter-month" 
+                               class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm p-2 focus:ring-2 ring-indigo-500"
+                               onchange="refreshData()">
+                        <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
+                    </div>
                 </div>
                 <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800 min-h-[100px]">
                     </div>
@@ -129,7 +163,7 @@
         <div class="glass max-w-md w-full p-10 rounded-[2.5rem] shadow-2xl animate-fade-up">
             <h2 class="text-3xl font-black mb-8">Transaksi Baru</h2>
             <form id="trans-form" class="space-y-5">
-                <input type="text" id="desc" placeholder="Keterangan (Contoh: Beli Kopi)" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500 transition-all" required>
+                <input type="text" id="desc" placeholder="Keterangan" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500 transition-all" required>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <input type="number" id="amount" placeholder="Jumlah (Rp)" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500" required>
@@ -145,6 +179,7 @@
                     <option value="Belanja">🛍️ Belanja</option>
                     <option value="Tagihan">🧾 Tagihan</option>
                     <option value="Kesehatan">🏥 Kesehatan</option>
+                    <option value="Gaji">💰 Gaji</option>
                     <option value="Lainnya">📦 Lainnya</option>
                 </select>
 
@@ -157,8 +192,12 @@
     </div>
 
     <script>
-        let mainChart, categoryChart;
-        let currentData = []; // Menyimpan data di memori untuk ekspor
+        let mainChart, categoryChart, annualBarChart;
+        let currentData = [];
+        let selectedMonth = new Date().toISOString().substring(0, 7);
+
+        // Set Default Filter
+        document.getElementById('filter-month').value = selectedMonth;
 
         // --- THEME ENGINE ---
         function setDarkMode(isDark) {
@@ -172,7 +211,10 @@
                 localStorage.setItem('theme', 'light');
             }
             lucide.createIcons();
-            if (mainChart) refreshData(); // Redraw charts with new colors
+            if (currentData.length > 0) {
+                renderDashboard(currentData);
+                updateAnnualBarChart();
+            }
         }
 
         document.getElementById('theme-btn').onclick = () => {
@@ -188,6 +230,8 @@
                 loggedOutDiv.style.display = 'none';
                 dashboardDiv.style.display = 'block';
                 refreshData();
+                fetchAnnualSummary();
+                updateAnnualBarChart();
             } else {
                 loggedOutDiv.style.display = 'block';
                 dashboardDiv.style.display = 'none';
@@ -199,9 +243,12 @@
             const user = netlifyIdentity.currentUser();
             if (!user) return;
 
+            const monthFilter = document.getElementById('filter-month').value;
+            selectedMonth = monthFilter;
+
             try {
                 const token = await user.jwt();
-                const res = await fetch('/.netlify/functions/get-data', {
+                const res = await fetch(`/.netlify/functions/get-data?month=${monthFilter}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -209,8 +256,7 @@
                 currentData = await res.json();
                 renderDashboard(currentData);
             } catch (err) {
-                console.warn("Mode Offline: Menggunakan data kosong.");
-                currentData = [];
+                console.warn("Error loading data", err);
                 renderDashboard([]);
             }
         }
@@ -243,7 +289,7 @@
                             ${isIncome ? '+' : '-'} Rp ${amount.toLocaleString()}
                         </p>
                     </div>`;
-            }).reverse().join('') || '<div class="p-20 text-center text-slate-400">Belum ada transaksi. Klik "Transaksi Baru" untuk memulai.</div>';
+            }).join('') || '<div class="p-20 text-center text-slate-400">Belum ada transaksi bulan ini.</div>';
             
             document.getElementById('total-balance').innerText = `Rp ${totalBalance.toLocaleString()}`;
             updateBudgetUI(totalExpense);
@@ -251,6 +297,86 @@
             lucide.createIcons();
         }
 
+        // --- ANNUAL SUMMARY ENGINE ---
+        async function fetchAnnualSummary() {
+            const user = netlifyIdentity.currentUser();
+            const year = new Date().getFullYear();
+            document.getElementById('current-year-label').innerText = year;
+
+            try {
+                const token = await user.jwt();
+                const res = await fetch(`/.netlify/functions/get-annual-summary?year=${year}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                let income = 0, expense = 0;
+                if (data.totals) {
+                    data.totals.forEach(t => {
+                        if (t._id === 'income') income = t.total;
+                        if (t._id === 'expense') expense = t.total;
+                    });
+                }
+
+                document.getElementById('annual-income').innerText = `Rp ${income.toLocaleString()}`;
+                document.getElementById('annual-expense').innerText = `Rp ${expense.toLocaleString()}`;
+            } catch (err) {
+                console.error("Error fetching annual summary", err);
+            }
+        }
+
+        async function updateAnnualBarChart() {
+            const user = netlifyIdentity.currentUser();
+            if (!user) return;
+            const year = new Date().getFullYear();
+            const isDark = document.documentElement.classList.contains('dark');
+
+            try {
+                const token = await user.jwt();
+                const res = await fetch(`/.netlify/functions/get-annual-summary?year=${year}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                const monthlyTotals = new Array(12).fill(0);
+                if (data.monthlyExpense) {
+                    data.monthlyExpense.forEach(item => {
+                        const monthIndex = parseInt(item._id) - 1;
+                        monthlyTotals[monthIndex] = item.total;
+                    });
+                }
+
+                const ctx = document.getElementById('annualBarChart').getContext('2d');
+                if (annualBarChart) annualBarChart.destroy();
+
+                annualBarChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                        datasets: [{
+                            data: monthlyTotals,
+                            backgroundColor: isDark ? '#6366f1' : '#4f46e5',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { color: isDark ? '#1e293b' : '#f1f5f9' },
+                                ticks: { color: isDark ? '#94a3b8' : '#64748b' }
+                            },
+                            x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } }
+                        }
+                    }
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        // --- BUDGET UI ---
         function updateBudgetUI(exp) {
             const limit = parseFloat(localStorage.getItem('monthly_budget')) || 0;
             const pct = limit > 0 ? (exp / limit) * 100 : 0;
@@ -258,7 +384,6 @@
             document.getElementById('budget-display').innerText = `Rp ${limit.toLocaleString()}`;
             document.getElementById('budget-progress').style.width = `${Math.min(pct, 100)}%`;
             
-            // Ubah warna progress bar jika hampir penuh
             const progressBar = document.getElementById('budget-progress');
             if (pct >= 100) progressBar.className = "h-full bg-rose-500 transition-all";
             else if (pct >= 80) progressBar.className = "h-full bg-amber-500 transition-all";
@@ -274,14 +399,15 @@
             }
         }
 
+        // --- CHARTS ---
         function updateCharts(data, catMap) {
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
-            // 1. Line Chart (7 Transaksi Terakhir)
+            // Main Line Chart
             const ctx1 = document.getElementById('mainChart').getContext('2d');
             if (mainChart) mainChart.destroy();
-            const last7 = data.slice(-7);
+            const last7 = data.slice(0, 7).reverse();
             
             mainChart = new Chart(ctx1, {
                 type: 'line',
@@ -290,11 +416,9 @@
                     datasets: [{ 
                         data: last7.map(d => d.amount), 
                         borderColor: '#6366f1', 
-                        borderWidth: 3,
                         tension: 0.4, 
                         fill: true, 
-                        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.05)',
-                        pointBackgroundColor: '#6366f1'
+                        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.05)'
                     }]
                 },
                 options: { 
@@ -307,7 +431,7 @@
                 }
             });
 
-            // 2. Doughnut Chart (Kategori)
+            // Category Doughnut
             const ctx2 = document.getElementById('categoryChart').getContext('2d');
             if (categoryChart) categoryChart.destroy();
             
@@ -315,29 +439,20 @@
             categoryChart = new Chart(ctx2, {
                 type: 'doughnut',
                 data: {
-                    labels: cats.length ? cats : ['Belum ada data'],
+                    labels: cats.length ? cats : ['No Data'],
                     datasets: [{ 
                         data: cats.length ? Object.values(catMap) : [1], 
                         backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#64748b'],
                         borderWidth: 0
                     }]
                 },
-                options: { 
-                    cutout: '75%',
-                    plugins: { 
-                        legend: { 
-                            position: 'bottom', 
-                            labels: { color: textColor, padding: 20, font: { weight: 'bold' } } 
-                        } 
-                    } 
-                }
+                options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
             });
         }
 
-        // --- EXPORT FUNCTION ---
+        // --- EXPORT ---
         function exportToExcel() {
             if (currentData.length === 0) return alert("Tidak ada data untuk diekspor");
-
             const reportData = currentData.map(item => ({
                 Tanggal: new Date(item.date).toLocaleDateString('id-ID'),
                 Keterangan: item.description,
@@ -345,31 +460,22 @@
                 Tipe: item.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
                 Jumlah: item.amount
             }));
-
             const ws = XLSX.utils.json_to_sheet(reportData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
-            
-            XLSX.writeFile(wb, `FinFamily_Laporan_${new Date().toISOString().split('T')[0]}.xlsx`);
+            XLSX.writeFile(wb, `FinFamily_${selectedMonth}.xlsx`);
         }
 
         // --- UI ACTIONS ---
         function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
-
         function setBudget() {
-            const b = prompt("Atur Batas Anggaran Bulanan (Rp):", "5000000");
-            if (b !== null) { 
-                localStorage.setItem('monthly_budget', b); 
-                refreshData(); 
-            }
+            const b = prompt("Atur Batas Anggaran (Rp):", "5000000");
+            if (b !== null) { localStorage.setItem('monthly_budget', b); refreshData(); }
         }
 
-        // --- FORM SUBMISSION ---
         document.getElementById('trans-form').onsubmit = async (e) => {
             e.preventDefault();
             const user = netlifyIdentity.currentUser();
-            if (!user) return alert("Anda harus login");
-
             const payload = {
                 description: document.getElementById('desc').value,
                 amount: parseFloat(document.getElementById('amount').value),
@@ -377,7 +483,6 @@
                 category: document.getElementById('category').value,
                 date: new Date().toISOString()
             };
-
             try {
                 const token = await user.jwt();
                 await fetch('/.netlify/functions/post-data', {
@@ -385,31 +490,16 @@
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                toggleModal();
-                e.target.reset();
-                refreshData();
-            } catch (err) {
-                alert("Gagal simpan (Backend Offline). Gunakan Netlify Functions untuk simpan permanen.");
-            }
+                toggleModal(); e.target.reset(); refreshData(); fetchAnnualSummary(); updateAnnualBarChart();
+            } catch (err) { alert("Gagal menyimpan."); }
         };
 
-        // --- INITIALIZATION ---
+        // --- INIT ---
         const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         setDarkMode(savedTheme === 'dark');
-
-        // Netlify Events
         netlifyIdentity.on('init', user => updateUIState(user));
-        netlifyIdentity.on('login', user => {
-            updateUIState(user);
-            netlifyIdentity.close();
-        });
+        netlifyIdentity.on('login', user => { updateUIState(user); netlifyIdentity.close(); });
         netlifyIdentity.on('logout', () => location.reload());
-
-        // Check user on load
-        setTimeout(() => {
-            const user = netlifyIdentity.currentUser();
-            if (user) updateUIState(user);
-        }, 500);
     </script>
 </body>
 </html>
