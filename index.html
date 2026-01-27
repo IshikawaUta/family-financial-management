@@ -144,13 +144,18 @@
             </div>
 
             <div class="glass rounded-[2rem] overflow-hidden">
-                <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center gap-4">
+                <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
                     <h4 class="font-bold whitespace-nowrap">Riwayat Transaksi</h4>
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-1 items-center gap-2 w-full md:max-w-md">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="search-input" placeholder="Cari transaksi..." 
+                                   class="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 ring-indigo-500"
+                                   oninput="filterTransactions()">
+                        </div>
                         <input type="month" id="filter-month" 
-                               class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm p-2 focus:ring-2 ring-indigo-500"
+                               class="bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm p-2 focus:ring-2 ring-indigo-500"
                                onchange="refreshData()">
-                        <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
                     </div>
                 </div>
                 <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800 min-h-[100px]">
@@ -196,7 +201,6 @@
         let currentData = [];
         let selectedMonth = new Date().toISOString().substring(0, 7);
 
-        // Set Default Filter
         document.getElementById('filter-month').value = selectedMonth;
 
         // --- THEME ENGINE ---
@@ -238,11 +242,30 @@
             }
         }
 
+        // --- UI FEEDBACK ---
+        function showSkeleton() {
+            const list = document.getElementById('transaction-list');
+            const skeleton = `
+                <div class="p-6 animate-pulse flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-2xl"></div>
+                        <div class="space-y-2">
+                            <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                            <div class="h-3 w-20 bg-slate-100 dark:bg-slate-700 rounded"></div>
+                        </div>
+                    </div>
+                    <div class="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                </div>
+            `.repeat(3);
+            list.innerHTML = skeleton;
+        }
+
         // --- DATA ENGINE ---
         async function refreshData() {
             const user = netlifyIdentity.currentUser();
             if (!user) return;
 
+            showSkeleton();
             const monthFilter = document.getElementById('filter-month').value;
             selectedMonth = monthFilter;
 
@@ -261,21 +284,35 @@
             }
         }
 
-        function renderDashboard(data) {
+        function filterTransactions() {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            const filtered = currentData.filter(item => 
+                item.description.toLowerCase().includes(term) || 
+                item.category.toLowerCase().includes(term)
+            );
+            renderDashboard(filtered, true);
+        }
+
+        function renderDashboard(data, isFiltering = false) {
             const list = document.getElementById('transaction-list');
             let totalBalance = 0, totalExpense = 0, catMap = {};
             
+            // Render list
             list.innerHTML = data.map(item => {
                 const isIncome = item.type === 'income';
                 const amount = parseFloat(item.amount);
-                totalBalance += isIncome ? amount : -amount;
-                if (!isIncome) {
-                    totalExpense += amount;
-                    catMap[item.category] = (catMap[item.category] || 0) + amount;
+                
+                // Hanya hitung total jika tidak sedang difilter pencarian
+                if (!isFiltering) {
+                    totalBalance += isIncome ? amount : -amount;
+                    if (!isIncome) {
+                        totalExpense += amount;
+                        catMap[item.category] = (catMap[item.category] || 0) + amount;
+                    }
                 }
                 
                 return `
-                    <div class="p-6 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <div class="p-6 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/40 group transition-colors">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 flex items-center justify-center rounded-2xl ${isIncome ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}">
                                 <i data-lucide="${isIncome ? 'trending-up' : 'trending-down'}" class="w-5 h-5"></i>
@@ -285,16 +322,40 @@
                                 <p class="text-xs text-slate-500">${item.category} • ${new Date(item.date).toLocaleDateString('id-ID')}</p>
                             </div>
                         </div>
-                        <p class="font-extrabold text-lg ${isIncome ? 'text-emerald-500' : 'text-rose-500'}">
-                            ${isIncome ? '+' : '-'} Rp ${amount.toLocaleString()}
-                        </p>
+                        <div class="flex items-center gap-4">
+                            <p class="font-extrabold text-lg ${isIncome ? 'text-emerald-500' : 'text-rose-500'}">
+                                ${isIncome ? '+' : '-'} Rp ${amount.toLocaleString()}
+                            </p>
+                            <button onclick="deleteTransaction('${item._id}')" class="opacity-0 group-hover:opacity-100 p-2 text-slate-400 hover:text-rose-500 transition-all">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>`;
-            }).join('') || '<div class="p-20 text-center text-slate-400">Belum ada transaksi bulan ini.</div>';
+            }).join('') || `<div class="p-20 text-center text-slate-400">${isFiltering ? 'Transaksi tidak ditemukan.' : 'Belum ada transaksi bulan ini.'}</div>`;
             
-            document.getElementById('total-balance').innerText = `Rp ${totalBalance.toLocaleString()}`;
-            updateBudgetUI(totalExpense);
-            updateCharts(data, catMap);
+            if (!isFiltering) {
+                document.getElementById('total-balance').innerText = `Rp ${totalBalance.toLocaleString()}`;
+                updateBudgetUI(totalExpense);
+                updateCharts(data, catMap);
+            }
             lucide.createIcons();
+        }
+
+        async function deleteTransaction(id) {
+            if (!confirm("Hapus transaksi ini secara permanen?")) return;
+            const user = netlifyIdentity.currentUser();
+            try {
+                const token = await user.jwt();
+                const res = await fetch(`/.netlify/functions/delete-data?id=${id}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    refreshData();
+                    fetchAnnualSummary();
+                    updateAnnualBarChart();
+                }
+            } catch (err) { alert("Gagal menghapus."); }
         }
 
         // --- ANNUAL SUMMARY ENGINE ---
@@ -320,9 +381,7 @@
 
                 document.getElementById('annual-income').innerText = `Rp ${income.toLocaleString()}`;
                 document.getElementById('annual-expense').innerText = `Rp ${expense.toLocaleString()}`;
-            } catch (err) {
-                console.error("Error fetching annual summary", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function updateAnnualBarChart() {
@@ -404,10 +463,9 @@
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
-            // Main Line Chart
             const ctx1 = document.getElementById('mainChart').getContext('2d');
             if (mainChart) mainChart.destroy();
-            const last7 = data.slice(0, 7).reverse();
+            const last7 = [...data].reverse().slice(-7);
             
             mainChart = new Chart(ctx1, {
                 type: 'line',
@@ -431,7 +489,6 @@
                 }
             });
 
-            // Category Doughnut
             const ctx2 = document.getElementById('categoryChart').getContext('2d');
             if (categoryChart) categoryChart.destroy();
             
@@ -480,8 +537,7 @@
                 description: document.getElementById('desc').value,
                 amount: parseFloat(document.getElementById('amount').value),
                 type: document.getElementById('type').value,
-                category: document.getElementById('category').value,
-                date: new Date().toISOString()
+                category: document.getElementById('category').value
             };
             try {
                 const token = await user.jwt();
