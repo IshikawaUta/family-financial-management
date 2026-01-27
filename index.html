@@ -12,14 +12,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
-        // Tailwind Configuration untuk mendukung Dark Mode class-based
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        darkBg: '#020617',
-                    }
+                    colors: { darkBg: '#020617' }
                 }
             }
         }
@@ -27,38 +24,24 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-        }
-
-        /* Transisi halus untuk semua perubahan warna */
-        * {
-            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, box-shadow 0.3s ease;
-        }
-
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        * { transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, box-shadow 0.3s ease; }
         .glass { 
             background: rgba(255, 255, 255, 0.75); 
             backdrop-filter: blur(12px); 
             border: 1px solid rgba(255, 255, 255, 0.4); 
         }
-
         .dark .glass { 
             background: rgba(15, 23, 42, 0.7); 
             border: 1px solid rgba(255, 255, 255, 0.08); 
         }
-
         .animate-fade-up { 
             animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
         }
-
         @keyframes fadeInUp { 
             from { opacity: 0; transform: translateY(20px); } 
             to { opacity: 1; transform: translateY(0); } 
         }
-
-        /* Menghilangkan scrollbar tapi tetap bisa scroll */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkBg text-slate-900 dark:text-slate-100 min-h-screen">
@@ -85,11 +68,11 @@
             <button onclick="netlifyIdentity.open()" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-500/30 hover:scale-105 transition-all">Mulai Sekarang</button>
         </div>
 
-        <div id="dashboard" class="hidden space-y-8 animate-fade-up">
+        <div id="dashboard" style="display: none;" class="space-y-8 animate-fade-up">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass p-8 rounded-[2rem] shadow-sm">
+                <div class="glass p-8 rounded-[2rem] shadow-sm border-l-4 border-indigo-500">
                     <p class="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">Total Saldo</p>
-                    <h2 id="total-balance" class="text-4xl font-black mt-2 text-indigo-600 dark:text-emerald-400 tracking-tight">Rp 0</h2>
+                    <h2 id="total-balance" class="text-4xl font-black mt-2 text-slate-800 dark:text-white tracking-tight">Rp 0</h2>
                 </div>
                 
                 <div class="glass p-8 rounded-[2rem] shadow-sm relative overflow-hidden group">
@@ -100,7 +83,7 @@
                         </button>
                     </div>
                     <h2 id="budget-display" class="text-4xl font-black mt-2 tracking-tight">Rp 0</h2>
-                    <div class="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mt-4">
+                    <div class="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full mt-4 overflow-hidden">
                         <div id="budget-progress" class="h-full bg-indigo-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
                     </div>
                     <p id="budget-status" class="text-[10px] mt-2 font-bold uppercase tracking-wider"></p>
@@ -110,19 +93,23 @@
                     <button onclick="toggleModal()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 transition-all">
                         + Transaksi Baru
                     </button>
-                    <button onclick="exportToExcel()" class="w-full py-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:opacity-80">
-                        <i data-lucide="download" class="w-4 h-4"></i> Ekspor Excel
+                    <button id="btn-export" onclick="exportToExcel()" class="w-full py-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:opacity-80 transition-all">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel
                     </button>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="glass p-8 rounded-[2rem]">
-                    <h4 class="font-bold mb-6 flex items-center gap-2"><i data-lucide="trending-up" class="text-indigo-500"></i> Tren 7 Hari Terakhir</h4>
+                    <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                        <i data-lucide="trending-up" class="text-indigo-500"></i> Tren Transaksi
+                    </h4>
                     <canvas id="mainChart" height="200"></canvas>
                 </div>
                 <div class="glass p-8 rounded-[2rem]">
-                    <h4 class="font-bold mb-6 flex items-center gap-2"><i data-lucide="pie-chart" class="text-indigo-500"></i> Alokasi Kategori</h4>
+                    <h4 class="font-bold mb-6 flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                        <i data-lucide="pie-chart" class="text-indigo-500"></i> Alokasi Kategori
+                    </h4>
                     <canvas id="categoryChart" height="200"></canvas>
                 </div>
             </div>
@@ -132,7 +119,7 @@
                     <h4 class="font-bold">Riwayat Transaksi</h4>
                     <i data-lucide="history" class="w-5 h-5 text-slate-400"></i>
                 </div>
-                <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800 min-h-[100px]">
                     </div>
             </div>
         </div>
@@ -142,11 +129,11 @@
         <div class="glass max-w-md w-full p-10 rounded-[2.5rem] shadow-2xl animate-fade-up">
             <h2 class="text-3xl font-black mb-8">Transaksi Baru</h2>
             <form id="trans-form" class="space-y-5">
-                <input type="text" id="desc" placeholder="Keterangan" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500 transition-all" required>
+                <input type="text" id="desc" placeholder="Keterangan (Contoh: Beli Kopi)" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500 transition-all" required>
                 
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="amount" placeholder="Jumlah" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500" required>
-                    <select id="type" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500">
+                    <input type="number" id="amount" placeholder="Jumlah (Rp)" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500" required>
+                    <select id="type" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none outline-none focus:ring-2 ring-indigo-500 font-bold">
                         <option value="expense">Pengeluaran</option>
                         <option value="income">Pemasukan</option>
                     </select>
@@ -162,8 +149,8 @@
                 </select>
 
                 <div class="flex gap-4 pt-6">
-                    <button type="button" onclick="toggleModal()" class="flex-1 font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Batal</button>
-                    <button type="submit" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all">Simpan</button>
+                    <button type="button" onclick="toggleModal()" class="flex-1 font-bold text-slate-400 hover:text-slate-600 transition-colors">Batal</button>
+                    <button type="submit" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all">Simpan</button>
                 </div>
             </form>
         </div>
@@ -171,70 +158,59 @@
 
     <script>
         let mainChart, categoryChart;
+        let currentData = []; // Menyimpan data di memori untuk ekspor
 
-        // --- SISTEM TEMA ---
-        const themeBtn = document.getElementById('theme-btn');
-        const themeIcon = document.getElementById('theme-icon');
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-                setDarkMode(true);
-            } else {
-                setDarkMode(false);
-            }
-        }
-
+        // --- THEME ENGINE ---
         function setDarkMode(isDark) {
             if (isDark) {
                 document.documentElement.classList.add('dark');
-                themeIcon.setAttribute('data-lucide', 'sun');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
                 localStorage.setItem('theme', 'dark');
             } else {
                 document.documentElement.classList.remove('dark');
-                themeIcon.setAttribute('data-lucide', 'moon');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
                 localStorage.setItem('theme', 'light');
             }
             lucide.createIcons();
-            if (mainChart) updateChartColors(); // Update chart jika warna berubah
+            if (mainChart) refreshData(); // Redraw charts with new colors
         }
 
-        themeBtn.onclick = () => {
-            const isDark = !document.documentElement.classList.contains('dark');
-            setDarkMode(isDark);
+        document.getElementById('theme-btn').onclick = () => {
+            setDarkMode(!document.documentElement.classList.contains('dark'));
         };
 
-        // --- UI & LOGIC ---
-        function toggleModal() { 
-            document.getElementById('modal').classList.toggle('hidden'); 
-        }
-
-        function setBudget() {
-            const b = prompt("Masukkan Batas Anggaran Bulanan (Rp):", "5000000");
-            if (b) { 
-                localStorage.setItem('monthly_budget', b); 
-                // Jika user sudah login, refresh tampilan
-                if (netlifyIdentity.currentUser()) refreshData();
+        // --- AUTH LOGIC ---
+        function updateUIState(user) {
+            const loggedOutDiv = document.getElementById('logged-out');
+            const dashboardDiv = document.getElementById('dashboard');
+            
+            if (user) {
+                loggedOutDiv.style.display = 'none';
+                dashboardDiv.style.display = 'block';
+                refreshData();
+            } else {
+                loggedOutDiv.style.display = 'block';
+                dashboardDiv.style.display = 'none';
             }
         }
 
+        // --- DATA ENGINE ---
         async function refreshData() {
             const user = netlifyIdentity.currentUser();
             if (!user) return;
-            
+
             try {
                 const token = await user.jwt();
-                // Opsional: Jika backend belum ada, gunakan data dummy/localStorage untuk demo
-                const res = await fetch('/.netlify/functions/get-data', { 
-                    headers: { Authorization: `Bearer ${token}` } 
+                const res = await fetch('/.netlify/functions/get-data', {
+                    headers: { Authorization: `Bearer ${token}` }
                 });
-                const data = await res.json();
-                renderDashboard(data);
+                
+                if (!res.ok) throw new Error("Backend offline");
+                currentData = await res.json();
+                renderDashboard(currentData);
             } catch (err) {
-                console.error("Gagal memuat data:", err);
-                // Placeholder render untuk tampilan awal
+                console.warn("Mode Offline: Menggunakan data kosong.");
+                currentData = [];
                 renderDashboard([]);
             }
         }
@@ -251,7 +227,7 @@
                     totalExpense += amount;
                     catMap[item.category] = (catMap[item.category] || 0) + amount;
                 }
-
+                
                 return `
                     <div class="p-6 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                         <div class="flex items-center gap-4">
@@ -259,16 +235,15 @@
                                 <i data-lucide="${isIncome ? 'trending-up' : 'trending-down'}" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <p class="font-bold leading-none mb-1 text-slate-800 dark:text-slate-200">${item.description}</p>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">${item.category} • ${new Date(item.date || Date.now()).toLocaleDateString('id-ID')}</p>
+                                <p class="font-bold text-slate-800 dark:text-slate-200 leading-none mb-1">${item.description}</p>
+                                <p class="text-xs text-slate-500">${item.category} • ${new Date(item.date).toLocaleDateString('id-ID')}</p>
                             </div>
                         </div>
                         <p class="font-extrabold text-lg ${isIncome ? 'text-emerald-500' : 'text-rose-500'}">
                             ${isIncome ? '+' : '-'} Rp ${amount.toLocaleString()}
                         </p>
-                    </div>
-                `;
-            }).join('') || '<div class="p-20 text-center"><p class="text-slate-400">Belum ada transaksi.</p></div>';
+                    </div>`;
+            }).reverse().join('') || '<div class="p-20 text-center text-slate-400">Belum ada transaksi. Klik "Transaksi Baru" untuk memulai.</div>';
             
             document.getElementById('total-balance').innerText = `Rp ${totalBalance.toLocaleString()}`;
             updateBudgetUI(totalExpense);
@@ -279,22 +254,23 @@
         function updateBudgetUI(exp) {
             const limit = parseFloat(localStorage.getItem('monthly_budget')) || 0;
             const pct = limit > 0 ? (exp / limit) * 100 : 0;
+            
             document.getElementById('budget-display').innerText = `Rp ${limit.toLocaleString()}`;
             document.getElementById('budget-progress').style.width = `${Math.min(pct, 100)}%`;
             
+            // Ubah warna progress bar jika hampir penuh
+            const progressBar = document.getElementById('budget-progress');
+            if (pct >= 100) progressBar.className = "h-full bg-rose-500 transition-all";
+            else if (pct >= 80) progressBar.className = "h-full bg-amber-500 transition-all";
+            else progressBar.className = "h-full bg-indigo-500 transition-all";
+
             const status = document.getElementById('budget-status');
             if (limit === 0) {
-                status.innerText = "Set anggaran di ⚙️";
-                status.className = "text-[10px] mt-2 font-bold uppercase tracking-wider text-slate-400";
-            } else if (pct >= 100) { 
-                status.innerText = "⚠️ Melebihi Anggaran!"; 
-                status.className = "text-[10px] mt-2 font-bold uppercase tracking-wider text-rose-500 animate-pulse";
-            } else if (pct >= 80) {
-                status.innerText = "Hati-hati: Hampir Habis";
-                status.className = "text-[10px] mt-2 font-bold uppercase tracking-wider text-amber-500";
+                status.innerText = "Set anggaran bulanan Anda";
+                status.className = "text-[10px] mt-2 font-bold uppercase text-slate-400";
             } else {
-                status.innerText = "Anggaran Aman";
-                status.className = "text-[10px] mt-2 font-bold uppercase tracking-wider text-emerald-500";
+                status.innerText = pct >= 100 ? "⚠️ Melebihi Batas!" : "Anggaran Aman";
+                status.className = `text-[10px] mt-2 font-bold uppercase ${pct >= 100 ? 'text-rose-500 animate-pulse' : 'text-emerald-500'}`;
             }
         }
 
@@ -302,39 +278,36 @@
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#94a3b8' : '#64748b';
 
-            // Line Chart
+            // 1. Line Chart (7 Transaksi Terakhir)
             const ctx1 = document.getElementById('mainChart').getContext('2d');
             if (mainChart) mainChart.destroy();
+            const last7 = data.slice(-7);
             
-            const last7 = [...data].slice(-7);
             mainChart = new Chart(ctx1, {
                 type: 'line',
                 data: {
-                    labels: last7.length ? last7.map(d => new Date(d.date || Date.now()).getDate()) : ['-'],
+                    labels: last7.map(d => new Date(d.date).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})),
                     datasets: [{ 
                         data: last7.map(d => d.amount), 
                         borderColor: '#6366f1', 
                         borderWidth: 3,
                         tension: 0.4, 
                         fill: true, 
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        pointRadius: 0
+                        backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.05)',
+                        pointBackgroundColor: '#6366f1'
                     }]
                 },
                 options: { 
                     responsive: true,
                     plugins: { legend: { display: false } }, 
                     scales: { 
-                        y: { display: false }, 
-                        x: { 
-                            grid: { display: false },
-                            ticks: { color: textColor }
-                        } 
+                        x: { grid: { display: false }, ticks: { color: textColor } }, 
+                        y: { display: false } 
                     } 
                 }
             });
 
-            // Doughnut Chart
+            // 2. Doughnut Chart (Kategori)
             const ctx2 = document.getElementById('categoryChart').getContext('2d');
             if (categoryChart) categoryChart.destroy();
             
@@ -345,42 +318,57 @@
                     labels: cats.length ? cats : ['Belum ada data'],
                     datasets: [{ 
                         data: cats.length ? Object.values(catMap) : [1], 
-                        backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#64748b'], 
-                        borderWidth: 0,
-                        hoverOffset: 10
+                        backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#64748b'],
+                        borderWidth: 0
                     }]
                 },
                 options: { 
-                    cutout: '70%', 
+                    cutout: '75%',
                     plugins: { 
                         legend: { 
-                            position: 'bottom',
-                            labels: { color: textColor, padding: 20, font: { family: 'Plus Jakarta Sans', weight: 'bold' } }
+                            position: 'bottom', 
+                            labels: { color: textColor, padding: 20, font: { weight: 'bold' } } 
                         } 
                     } 
                 }
             });
         }
 
+        // --- EXPORT FUNCTION ---
         function exportToExcel() {
-            const items = Array.from(document.querySelectorAll('#transaction-list > div'));
-            if (items.length === 0) return alert("Tidak ada data untuk diekspor");
+            if (currentData.length === 0) return alert("Tidak ada data untuk diekspor");
 
-            const data = items.map(el => ({
-                Keterangan: el.querySelector('.font-bold').innerText,
-                Info: el.querySelector('.text-xs').innerText,
-                Jumlah: el.querySelector('.font-extrabold').innerText
+            const reportData = currentData.map(item => ({
+                Tanggal: new Date(item.date).toLocaleDateString('id-ID'),
+                Keterangan: item.description,
+                Kategori: item.category,
+                Tipe: item.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+                Jumlah: item.amount
             }));
-            const ws = XLSX.utils.json_to_sheet(data);
+
+            const ws = XLSX.utils.json_to_sheet(reportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Keuangan");
+            XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+            
             XLSX.writeFile(wb, `FinFamily_Laporan_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
+        // --- UI ACTIONS ---
+        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
+
+        function setBudget() {
+            const b = prompt("Atur Batas Anggaran Bulanan (Rp):", "5000000");
+            if (b !== null) { 
+                localStorage.setItem('monthly_budget', b); 
+                refreshData(); 
+            }
+        }
+
+        // --- FORM SUBMISSION ---
         document.getElementById('trans-form').onsubmit = async (e) => {
             e.preventDefault();
             const user = netlifyIdentity.currentUser();
-            if (!user) return alert("Silakan login terlebih dahulu");
+            if (!user) return alert("Anda harus login");
 
             const payload = {
                 description: document.getElementById('desc').value,
@@ -397,36 +385,31 @@
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                toggleModal(); 
-                e.target.reset(); 
+                toggleModal();
+                e.target.reset();
                 refreshData();
             } catch (err) {
-                console.error("Gagal simpan:", err);
-                alert("Gagal menyimpan transaksi. Pastikan Netlify Functions aktif.");
+                alert("Gagal simpan (Backend Offline). Gunakan Netlify Functions untuk simpan permanen.");
             }
         };
 
-        // --- INIT ---
-        initTheme();
-        lucide.createIcons();
+        // --- INITIALIZATION ---
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setDarkMode(savedTheme === 'dark');
 
-        netlifyIdentity.setAPIurl("https://finfamily-app.netlify.app/.netlify/identity");
-
-        netlifyIdentity.on('init', user => {
-            if (user) {
-                document.getElementById('logged-out').style.display = 'none';
-                document.getElementById('dashboard').classList.remove('hidden');
-                refreshData();
-            }
-        });
-
+        // Netlify Events
+        netlifyIdentity.on('init', user => updateUIState(user));
         netlifyIdentity.on('login', user => {
-            document.getElementById('logged-out').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            refreshData();
+            updateUIState(user);
+            netlifyIdentity.close();
         });
-
         netlifyIdentity.on('logout', () => location.reload());
+
+        // Check user on load
+        setTimeout(() => {
+            const user = netlifyIdentity.currentUser();
+            if (user) updateUIState(user);
+        }, 500);
     </script>
 </body>
 </html>
