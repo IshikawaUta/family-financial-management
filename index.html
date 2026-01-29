@@ -10,6 +10,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -113,9 +115,14 @@
                     <button onclick="toggleModal()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 transition-all">
                         + Transaksi Baru
                     </button>
-                    <button id="btn-export" onclick="exportToExcel()" class="w-full py-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:opacity-80 transition-all">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel Bulan Ini
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btn-export" onclick="exportToExcel()" class="py-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 hover:opacity-80 transition-all">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+                        </button>
+                        <button id="btn-export-pdf" onclick="exportToPDF()" class="py-2 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-2 hover:opacity-80 transition-all">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -297,12 +304,10 @@
             const list = document.getElementById('transaction-list');
             let totalBalance = 0, totalExpense = 0, catMap = {};
             
-            // Render list
             list.innerHTML = data.map(item => {
                 const isIncome = item.type === 'income';
                 const amount = parseFloat(item.amount);
                 
-                // Hanya hitung total jika tidak sedang difilter pencarian
                 if (!isFiltering) {
                     totalBalance += isIncome ? amount : -amount;
                     if (!isIncome) {
@@ -358,7 +363,7 @@
             } catch (err) { alert("Gagal menghapus."); }
         }
 
-        // --- ANNUAL SUMMARY ENGINE ---
+        // --- ANNUAL SUMMARY ---
         async function fetchAnnualSummary() {
             const user = netlifyIdentity.currentUser();
             const year = new Date().getFullYear();
@@ -507,7 +512,7 @@
             });
         }
 
-        // --- EXPORT ---
+        // --- EXPORT ENGINES ---
         function exportToExcel() {
             if (currentData.length === 0) return alert("Tidak ada data untuk diekspor");
             const reportData = currentData.map(item => ({
@@ -521,6 +526,67 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
             XLSX.writeFile(wb, `FinFamily_${selectedMonth}.xlsx`);
+        }
+
+        async function exportToPDF() {
+            if (currentData.length === 0) return alert("Tidak ada data untuk diekspor");
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(20);
+            doc.setTextColor(79, 70, 229); 
+            doc.text("FinFamily | Laporan Keuangan", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Periode Bulan: ${selectedMonth}`, 14, 28);
+            doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 33);
+
+            let totalInc = 0;
+            let totalExp = 0;
+            const tableRows = [];
+
+            currentData.forEach(item => {
+                const isIncome = item.type === 'income';
+                const amount = parseFloat(item.amount);
+                if (isIncome) totalInc += amount;
+                else totalExp += amount;
+
+                tableRows.push([
+                    new Date(item.date).toLocaleDateString('id-ID'),
+                    item.description,
+                    item.category,
+                    isIncome ? 'Pemasukan' : 'Pengeluaran',
+                    `Rp ${amount.toLocaleString('id-ID')}`
+                ]);
+            });
+
+            doc.autoTable({
+                head: [['Tanggal', 'Keterangan', 'Kategori', 'Tipe', 'Jumlah']],
+                body: tableRows,
+                startY: 40,
+                theme: 'striped',
+                headStyles: { fillGray: [79, 70, 229], textColor: 255 },
+                styles: { fontSize: 9 },
+                columnStyles: { 4: { halign: 'right' } }
+            });
+
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(11);
+            doc.setTextColor(0);
+            
+            doc.text(`Total Pemasukan:`, 14, finalY);
+            doc.text(`Rp ${totalInc.toLocaleString('id-ID')}`, 60, finalY);
+            
+            doc.text(`Total Pengeluaran:`, 14, finalY + 7);
+            doc.text(`Rp ${totalExp.toLocaleString('id-ID')}`, 60, finalY + 7);
+            
+            doc.setFont(undefined, 'bold');
+            doc.text(`Sisa Saldo:`, 14, finalY + 14);
+            doc.text(`Rp ${(totalInc - totalExp).toLocaleString('id-ID')}`, 60, finalY + 14);
+
+            doc.save(`FinFamily_Laporan_${selectedMonth}.pdf`);
         }
 
         // --- UI ACTIONS ---
