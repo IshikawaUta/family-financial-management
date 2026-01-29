@@ -115,6 +115,11 @@
                     <button onclick="toggleModal()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 transition-all">
                         + Transaksi Baru
                     </button>
+                    <button onclick="document.getElementById('scan-input').click()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                        <i data-lucide="camera" class="w-4 h-4"></i> Scan Struk
+                    </button>
+                    <input type="file" id="scan-input" accept="image/*" class="hidden" onchange="processReceipt(event)">
+                    
                     <div class="grid grid-cols-2 gap-2">
                         <button id="btn-export" onclick="exportToExcel()" class="py-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 hover:opacity-80 transition-all">
                             <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
@@ -165,8 +170,7 @@
                                onchange="refreshData()">
                     </div>
                 </div>
-                <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800 min-h-[100px]">
-                    </div>
+                <div id="transaction-list" class="divide-y divide-slate-100 dark:divide-slate-800 min-h-[100px]"></div>
             </div>
         </div>
     </main>
@@ -344,6 +348,43 @@
                 updateCharts(data, catMap);
             }
             lucide.createIcons();
+        }
+
+        // --- SCAN RECEIPT ENGINE ---
+        async function processReceipt(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const btn = document.querySelector('[onclick*="scan-input"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Memproses...`;
+            lucide.createIcons();
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                try {
+                    const res = await fetch('/.netlify/functions/scan-receipt', {
+                        method: 'POST',
+                        body: JSON.stringify({ image: reader.result })
+                    });
+                    const result = await res.json();
+
+                    toggleModal();
+                    document.getElementById('amount').value = result.amount;
+                    document.getElementById('category').value = result.category;
+                    document.getElementById('desc').value = "Struk " + result.category;
+                    document.getElementById('type').value = "expense";
+                    
+                    alert(`Berhasil! Terdeteksi nominal Rp ${result.amount.toLocaleString()} dengan kategori ${result.category}`);
+                } catch (err) {
+                    alert("Gagal memproses struk. Silakan coba lagi.");
+                } finally {
+                    btn.innerHTML = originalText;
+                    lucide.createIcons();
+                    event.target.value = ""; 
+                }
+            };
         }
 
         async function deleteTransaction(id) {
@@ -530,62 +571,25 @@
 
         async function exportToPDF() {
             if (currentData.length === 0) return alert("Tidak ada data untuk diekspor");
-
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
             doc.setFontSize(20);
             doc.setTextColor(79, 70, 229); 
             doc.text("FinFamily | Laporan Keuangan", 14, 20);
-            
             doc.setFontSize(10);
             doc.setTextColor(100);
             doc.text(`Periode Bulan: ${selectedMonth}`, 14, 28);
-            doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 33);
-
-            let totalInc = 0;
-            let totalExp = 0;
-            const tableRows = [];
-
+            let totalInc = 0, totalExp = 0, tableRows = [];
             currentData.forEach(item => {
-                const isIncome = item.type === 'income';
                 const amount = parseFloat(item.amount);
-                if (isIncome) totalInc += amount;
-                else totalExp += amount;
-
-                tableRows.push([
-                    new Date(item.date).toLocaleDateString('id-ID'),
-                    item.description,
-                    item.category,
-                    isIncome ? 'Pemasukan' : 'Pengeluaran',
-                    `Rp ${amount.toLocaleString('id-ID')}`
-                ]);
+                if (item.type === 'income') totalInc += amount; else totalExp += amount;
+                tableRows.push([new Date(item.date).toLocaleDateString('id-ID'), item.description, item.category, item.type === 'income' ? 'Pemasukan' : 'Pengeluaran', `Rp ${amount.toLocaleString('id-ID')}`]);
             });
-
-            doc.autoTable({
-                head: [['Tanggal', 'Keterangan', 'Kategori', 'Tipe', 'Jumlah']],
-                body: tableRows,
-                startY: 40,
-                theme: 'striped',
-                headStyles: { fillGray: [79, 70, 229], textColor: 255 },
-                styles: { fontSize: 9 },
-                columnStyles: { 4: { halign: 'right' } }
-            });
-
+            doc.autoTable({ head: [['Tanggal', 'Keterangan', 'Kategori', 'Tipe', 'Jumlah']], body: tableRows, startY: 40, theme: 'striped', headStyles: { fillGray: [79, 70, 229], textColor: 255 }, columnStyles: { 4: { halign: 'right' } } });
             const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(11);
-            doc.setTextColor(0);
-            
-            doc.text(`Total Pemasukan:`, 14, finalY);
-            doc.text(`Rp ${totalInc.toLocaleString('id-ID')}`, 60, finalY);
-            
-            doc.text(`Total Pengeluaran:`, 14, finalY + 7);
-            doc.text(`Rp ${totalExp.toLocaleString('id-ID')}`, 60, finalY + 7);
-            
-            doc.setFont(undefined, 'bold');
-            doc.text(`Sisa Saldo:`, 14, finalY + 14);
-            doc.text(`Rp ${(totalInc - totalExp).toLocaleString('id-ID')}`, 60, finalY + 14);
-
+            doc.text(`Total Pemasukan: Rp ${totalInc.toLocaleString()}`, 14, finalY);
+            doc.text(`Total Pengeluaran: Rp ${totalExp.toLocaleString()}`, 14, finalY + 7);
+            doc.text(`Sisa Saldo: Rp ${(totalInc - totalExp).toLocaleString()}`, 14, finalY + 14);
             doc.save(`FinFamily_Laporan_${selectedMonth}.pdf`);
         }
 
