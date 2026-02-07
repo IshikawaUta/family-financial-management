@@ -11,6 +11,8 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@sendgrid/mail@^8.1.6",
+        "npm:axios@^1.6.0",
         "npm:mongodb@7"
       ]
     }

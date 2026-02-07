@@ -37,3 +37,7 @@ exclude:
   - vendor/ruby/
   - package.json
   - package-lock.json
+  - .netlify/
+  - .github/
+  - deno.lock
+  - .env

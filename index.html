@@ -116,7 +116,7 @@
                     <button onclick="toggleModal()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-500/20 transition-all">
                         + Transaksi Baru
                     </button>
-                    <button onclick="document.getElementById('scan-input').click()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                    <button id="scan-btn" onclick="document.getElementById('scan-input').click()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                         <i data-lucide="camera" class="w-4 h-4"></i> Scan Struk
                     </button>
                     <input type="file" id="scan-input" accept="image/*" class="hidden" onchange="processReceipt(event)">
@@ -226,7 +226,7 @@
                 document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
                 localStorage.setItem('theme', 'light');
             }
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             if (currentData.length > 0) {
                 renderDashboard(currentData);
                 updateAnnualBarChart();
@@ -348,18 +348,19 @@
                 updateBudgetUI(totalExpense);
                 updateCharts(data, catMap);
             }
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
 
-        // --- SCAN RECEIPT ENGINE ---
+        // --- SCAN RECEIPT ENGINE (PERBAIKAN) ---
         async function processReceipt(event) {
             const file = event.target.files[0];
             if (!file) return;
 
-            const btn = document.querySelector('[onclick*="scan-input"]');
+            const btn = document.getElementById('scan-btn');
             const originalText = btn.innerHTML;
+            
             btn.innerHTML = `<i class="w-4 h-4 animate-spin" data-lucide="loader-2"></i> Memproses...`;
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
 
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -367,22 +368,27 @@
                 try {
                     const res = await fetch('/.netlify/functions/scan-receipt', {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ image: reader.result })
                     });
+                    
+                    if (!res.ok) throw new Error("Gagal mengenali struk (Server Error)");
+                    
                     const result = await res.json();
 
                     toggleModal();
-                    document.getElementById('amount').value = result.amount;
-                    document.getElementById('category').value = result.category;
-                    document.getElementById('desc').value = "Struk " + result.category;
+                    document.getElementById('amount').value = result.amount || 0;
+                    document.getElementById('category').value = result.category || "Lainnya";
+                    document.getElementById('desc').value = "Struk " + (result.category || "Otomatis");
                     document.getElementById('type').value = "expense";
                     
-                    alert(`Berhasil! Terdeteksi nominal Rp ${result.amount.toLocaleString()} dengan kategori ${result.category}`);
+                    alert(`Berhasil! Terdeteksi nominal Rp ${result.amount?.toLocaleString()} dengan kategori ${result.category}`);
                 } catch (err) {
-                    alert("Gagal memproses struk. Silakan coba lagi.");
+                    alert("Gagal memproses struk. Silakan periksa koneksi atau coba gambar yang lebih jelas.");
+                    console.error(err);
                 } finally {
                     btn.innerHTML = originalText;
-                    lucide.createIcons();
+                    if(window.lucide) lucide.createIcons();
                     event.target.value = ""; 
                 }
             };
@@ -586,7 +592,14 @@
                 if (item.type === 'income') totalInc += amount; else totalExp += amount;
                 tableRows.push([new Date(item.date).toLocaleDateString('id-ID'), item.description, item.category, item.type === 'income' ? 'Pemasukan' : 'Pengeluaran', `Rp ${amount.toLocaleString('id-ID')}`]);
             });
-            doc.autoTable({ head: [['Tanggal', 'Keterangan', 'Kategori', 'Tipe', 'Jumlah']], body: tableRows, startY: 40, theme: 'striped', headStyles: { fillGray: [79, 70, 229], textColor: 255 }, columnStyles: { 4: { halign: 'right' } } });
+            doc.autoTable({ 
+                head: [['Tanggal', 'Keterangan', 'Kategori', 'Tipe', 'Jumlah']], 
+                body: tableRows, 
+                startY: 40, 
+                theme: 'striped', 
+                headStyles: { fillGray: [79, 70, 229], textColor: 255 }, 
+                columnStyles: { 4: { halign: 'right' } } 
+            });
             const finalY = doc.lastAutoTable.finalY + 10;
             doc.text(`Total Pemasukan: Rp ${totalInc.toLocaleString()}`, 14, finalY);
             doc.text(`Total Pengeluaran: Rp ${totalExp.toLocaleString()}`, 14, finalY + 7);
@@ -608,7 +621,8 @@
                 description: document.getElementById('desc').value,
                 amount: parseFloat(document.getElementById('amount').value),
                 type: document.getElementById('type').value,
-                category: document.getElementById('category').value
+                category: document.getElementById('category').value,
+                date: new Date().toISOString()
             };
             try {
                 const token = await user.jwt();
