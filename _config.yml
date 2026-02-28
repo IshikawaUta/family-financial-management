@@ -1,15 +1,18 @@
 # Pengaturan Dasar Situs
 title: FinFamily - Manajemen Keuangan Keluarga Modern
-email: admin@family.com
+email: ishikawauta@eksashop.web.id
 description: >-
   Solusi cerdas manajemen keuangan keluarga. Pantau pengeluaran, 
-  pemasukan, dan tabungan dengan dasbor modern, aman, dan privat.
+  pemasukan, dan tabungan dengan dasbor modern, aman, dan privat 
+  dilengkapi fitur Smart OCR & Laporan Excel.
 baseurl: ""
-url: "https://nama-situs-anda.netlify.app"
+url: "https://finfamily-app.netlify.app"
 
-# twitter_username: keluarga_anda
-github_username: IshikawaUta
-social_share_image: ""
+# Informasi Penulis & Sosial
+author:
+  name: IshikawaUta
+  github: IshikawaUta
+twitter_username:
 
 # Permalinks
 permalink: /:title/
@@ -18,15 +21,21 @@ permalink: /:title/
 include:
   - functions
   - .netlify
+  - 404.html
 
 # Pengaturan Build
 markdown: kramdown
+theme:
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
 
-# Exclude (File yang tidak perlu di-build menjadi website)
+# Pengaturan SEO & Metadata
+lang: id-ID
+timezone: Asia/Jakarta
+
+# Exclude (File yang tidak perlu di-build menjadi website statis)
 exclude:
   - Gemfile
   - Gemfile.lock
@@ -41,3 +50,4 @@ exclude:
   - .github/
   - deno.lock
   - .env
+  - README.md

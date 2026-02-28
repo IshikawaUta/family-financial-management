@@ -2,24 +2,149 @@
 permalink: /404.html
 layout: null
 ---
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Cari & Export Transaksi | FinFamily</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div class="max-w-2xl mx-auto px-6 py-12 flex flex-col items-center">
+        
+        <div class="text-center mb-10">
+            <h1 class="text-8xl font-black text-indigo-600/20 dark:text-indigo-400/10 mb-[-50px]">404</h1>
+            <h2 class="text-3xl font-bold mb-2 text-indigo-600 dark:text-indigo-400">Halaman Tidak Ditemukan</h2>
+            <p class="text-slate-500">Tenang, data keuangan Anda tidak ikut hilang. Mau cari atau export transaksi?</p>
+        </div>
 
-<style type="text/css" media="screen">
-  .container {
-    margin: 10px auto;
-    max-width: 600px;
-    text-align: center;
-  }
-  h1 {
-    margin: 30px 0;
-    font-size: 4em;
-    line-height: 1;
-    letter-spacing: -1px;
-  }
-</style>
+        <div class="w-full bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800">
+            <div class="flex gap-2 mb-4">
+                <div class="relative flex-1">
+                    <input type="text" id="searchInput" placeholder="Cari transaksi..." 
+                        class="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm">
+                    <button onclick="handleSearch()" class="absolute right-3 top-2.5 p-1.5 text-slate-400 hover:text-indigo-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </button>
+                </div>
+                <button id="exportBtn" onclick="exportToExcel()" disabled 
+                    class="px-4 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all flex items-center gap-2 text-sm shadow-lg shadow-emerald-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Export
+                </button>
+            </div>
 
-<div class="container">
-  <h1>404</h1>
+            <div id="results" class="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                <p class="text-center text-sm text-slate-400 py-10 italic">Cari sesuatu untuk mulai mengekspor data...</p>
+            </div>
+        </div>
 
-  <p><strong>Page not found :(</strong></p>
-  <p>The requested page could not be found.</p>
-</div>
+        <div class="mt-10 flex gap-4">
+            <a href="/" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">← Kembali ke Dashboard Utama</a>
+        </div>
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+
+    <script>
+        let currentFilteredData = [];
+
+        async function handleSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const resultsDiv = document.getElementById('results');
+            const exportBtn = document.getElementById('exportBtn');
+            const user = netlifyIdentity.currentUser();
+
+            if (!user) {
+                resultsDiv.innerHTML = '<p class="text-center text-red-500 py-10">Silakan login terlebih dahulu.</p>';
+                return;
+            }
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<p class="text-center text-slate-400 py-10 italic">Masukkan minimal 2 karakter...</p>';
+                exportBtn.disabled = true;
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="flex flex-col items-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-2"></div><p class="text-sm text-slate-500">Mencari di gudang data...</p></div>';
+
+            try {
+                const token = await user.jwt();
+                const response = await fetch('/.netlify/functions/get-data', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                currentFilteredData = data.filter(item => 
+                    item.description.toLowerCase().includes(query) || 
+                    item.category.toLowerCase().includes(query)
+                );
+
+                if (currentFilteredData.length === 0) {
+                    resultsDiv.innerHTML = '<p class="text-center text-slate-400 py-10">Data tidak ditemukan.</p>';
+                    exportBtn.disabled = true;
+                    return;
+                }
+
+                exportBtn.disabled = false;
+                resultsDiv.innerHTML = currentFilteredData.map(item => `
+                    <div class="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all">
+                        <div>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.description}</p>
+                            <div class="flex gap-2 items-center mt-1">
+                                <span class="text-[10px] px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-400 uppercase font-bold">${item.category}</span>
+                                <span class="text-xs text-slate-400">${new Date(item.date).toLocaleDateString('id-ID', {day:'2-digit', month:'short'})}</span>
+                            </div>
+                        </div>
+                        <p class="font-black ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}">
+                            ${item.type === 'income' ? '+' : '-'} ${item.amount.toLocaleString('id-ID')}
+                        </p>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                resultsDiv.innerHTML = '<p class="text-center text-red-400 py-10">Gagal memuat data.</p>';
+                exportBtn.disabled = true;
+            }
+        }
+
+        function exportToExcel() {
+            if (currentFilteredData.length === 0) return;
+            
+            // Format data untuk Excel
+            const excelData = currentFilteredData.map(item => ({
+                Tanggal: new Date(item.date).toLocaleDateString('id-ID'),
+                Deskripsi: item.description,
+                Kategori: item.category,
+                Tipe: item.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+                Nominal: item.amount
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Pencarian");
+            
+            // Download file
+            const fileName = `FinFamily_Search_Export_${new Date().getTime()}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
+        });
+    </script>
+</body>
+</html>

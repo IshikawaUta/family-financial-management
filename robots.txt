@@ -1,0 +1,12 @@
+---
+layout: null
+permalink: /robots.txt
+---
+User-agent: *
+Disallow: /functions/
+Disallow: /.netlify/
+Disallow: /vendor/
+Disallow: /node_modules/
+Disallow: /404.html
+Allow: /
+Sitemap: {{ site.url }}/sitemap.xml
