@@ -70,4 +70,4 @@ Proyek ini dibuat untuk keperluan pribadi dan edukasi.
 
 ---
 
-**Developed by [IshikawaUta**](https://www.google.com/search?q=https://github.com/IshikawaUta)
+**Developed by [IshikawaUta**](https://www.google.com/search?q=https://github.com/IshikawaUta)**
